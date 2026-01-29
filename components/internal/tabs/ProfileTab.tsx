@@ -16,7 +16,7 @@ export default function ProfileTab() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await serverApi.get("/lawizerExpert/profile");
+        const res = await serverApi.get("/api/profile");
         setProfile(res.data.profile);
       } catch (err) {
         console.error("Failed to load profile", err);

@@ -16,7 +16,7 @@ export default function ServicesTab() {
   useEffect(() => {
     const loadServices = async () => {
       try {
-        const res = await serverApi.get("/lawizerExpert/services");
+        const res = await serverApi.get("/api/services");
         setServices(res.data?.services || []);
       } catch (err) {
         console.error("Failed to fetch services", err);

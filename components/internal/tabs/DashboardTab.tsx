@@ -14,7 +14,7 @@ export default function DashboardTab() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const res = await serverApi.get("/lawizerExpert/dashboard");
+        const res = await serverApi.get("/api/dashboard");
         setDashboard(res.data.dashboard);
       } catch (err) {
         console.error("Failed to load internal dashboard", err);
@@ -38,9 +38,7 @@ export default function DashboardTab() {
     >
       {/* HEADER */}
       <div>
-        <p className="text-lg font-light text-[#373737]">
-          Welcome back 👋
-        </p>
+        <p className="text-lg font-light text-[#373737]">Welcome back 👋</p>
         <p className="text-gray-500 mt-1">
           Here’s an overview of your assigned services.
         </p>
