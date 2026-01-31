@@ -1,29 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/internal/Sidebar";
 import Header from "@/components/internal/Header";
+import { useAuth } from "@/context/authContext";
 
 export default function InternalDashboardLayoutClient({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { isLoggedIn, loading, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  let activeTab = "dashboard";
+  useEffect(() => {
+    if (!loading && !isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [loading, isLoggedIn, router]);
 
+  if (loading || !isLoggedIn) {
+    return <div className="p-6">Checking authentication...</div>;
+  }
+
+  let activeTab = "dashboard";
   if (searchParams.get("tab")) {
     activeTab = searchParams.get("tab")!;
   }
 
   const handleLogout = () => {
-    localStorage.clear();
-    document.cookie = "token=; path=/; max-age=0";
-    window.location.href = "/login";
+    logout();
   };
 
   return (
