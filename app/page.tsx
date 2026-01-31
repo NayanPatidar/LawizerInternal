@@ -1,21 +1,17 @@
 "use client";
-import { useAuth } from "@/context/authContext";
-import { redirect, useRouter } from "next/navigation";
+
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/authContext";
 
 export default function Home() {
-  const { isLoggedIn, loading } = useAuth();
+  const { loading, isLoggedIn } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
-
-    if (isLoggedIn) {
-      router.replace("/dashboard");
-    } else {
-      router.replace("/login");
-    }
-  }, [isLoggedIn, loading, router]);
+    router.replace(isLoggedIn ? "/dashboard" : "/login");
+  }, [loading, isLoggedIn, router]);
 
   return null;
 }

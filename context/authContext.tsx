@@ -15,7 +15,7 @@ interface AuthContextType {
   user: LawizerExpert | null;
   loading: boolean;
   isLoggedIn: boolean;
-  refreshUser: () => void;
+  login: (expert: LawizerExpert, token: string) => void;
   logout: () => void;
 }
 
@@ -25,7 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isLoggedIn: false,
-  refreshUser: () => {},
+  login: () => {},
   logout: () => {},
 });
 
@@ -36,47 +36,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  /* ===================== REFRESH USER ===================== */
-  const refreshUser = () => {
-    try {
-      const token = localStorage.getItem("token");
-      const uid = localStorage.getItem("uid");
-      const email = localStorage.getItem("email");
-      const role = localStorage.getItem("role");
-
-      if (!token || !uid || !email || role !== "LAWIZER_EXPERT") {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      setUser({
-        uid,
-        email,
-        role: "LAWIZER_EXPERT",
-      });
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   /* ===================== INIT ===================== */
   useEffect(() => {
-    refreshUser();
+    const token = localStorage.getItem("token");
+    const uid = localStorage.getItem("uid");
+    const email = localStorage.getItem("email");
+    const role = localStorage.getItem("role");
+
+    if (token && uid && email && role === "LAWIZER_EXPERT") {
+      setUser({ uid, email, role: "LAWIZER_EXPERT" });
+    }
+
+    setLoading(false);
   }, []);
+
+  /* ===================== LOGIN ===================== */
+  const login = (expert: LawizerExpert, token: string) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("uid", expert.uid);
+    localStorage.setItem("email", expert.email);
+    localStorage.setItem("role", expert.role);
+    localStorage.setItem("userProfile", JSON.stringify(expert));
+
+    setUser(expert);
+    router.replace("/dashboard");
+  };
 
   /* ===================== LOGOUT ===================== */
   const logout = () => {
-    localStorage.removeItem("uid");
-    localStorage.removeItem("email");
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("userProfile");
-
+    localStorage.clear();
     setUser(null);
-    router.push("/login");
+    router.replace("/login");
   };
 
   return (
@@ -85,7 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         loading,
         isLoggedIn: !!user,
-        refreshUser,
+        login,
         logout,
       }}
     >

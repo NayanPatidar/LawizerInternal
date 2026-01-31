@@ -22,31 +22,18 @@ export default function InternalDashboardLayoutClient({
     }
   }, [loading, isLoggedIn, router]);
 
-  if (loading || !isLoggedIn) {
-    return <div className="p-6">Checking authentication...</div>;
-  }
+  if (loading || !isLoggedIn) return null;
 
-  let activeTab = "dashboard";
-  if (searchParams.get("tab")) {
-    activeTab = searchParams.get("tab")!;
-  }
-
-  const handleLogout = () => {
-    logout();
-  };
+  const activeTab = searchParams.get("tab") ?? "dashboard";
 
   return (
-    <div className="flex bg-[#fafafa] overflow-hidden min-h-screen">
+    <div className="flex bg-[#fafafa] min-h-screen">
       <Sidebar
         activeTab={activeTab}
         menuOpen={menuOpen}
-        handleLogout={handleLogout}
+        handleLogout={logout}
       />
-
-      {/* HEADER */}
       <Header setMenuOpen={setMenuOpen} />
-
-      {/* CONTENT */}
       <main className="flex-1 ml-0 lg:ml-64 pt-20 px-6 lg:px-10">
         {children}
       </main>

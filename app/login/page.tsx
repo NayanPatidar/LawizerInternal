@@ -6,12 +6,14 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
 import { useRouter } from "next/navigation";
 import { lawizerExpertLogin } from "@/lib/apis/api";
+import { useAuth } from "@/context/authContext";
 
 export default function InternalExpertLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
 
   const router = useRouter();
 
@@ -53,13 +55,14 @@ export default function InternalExpertLoginPage() {
       if (!res || !res.token) {
         throw new Error(res?.message || "Login failed");
       }
-
-      // 🔒 STORE SESSION
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("uid", res.expert.uid);
-      localStorage.setItem("email", res.expert.email);
-      localStorage.setItem("role", "LAWIZER_EXPERT");
-      localStorage.setItem("userProfile", JSON.stringify(res.expert));
+      login(
+        {
+          uid: res.expert.uid,
+          email: res.expert.email,
+          role: "LAWIZER_EXPERT",
+        },
+        res.token,
+      );
 
       router.push("/dashboard");
     } catch (err: any) {
