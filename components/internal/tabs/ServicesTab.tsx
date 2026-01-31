@@ -16,13 +16,14 @@ type DocumentItem = {
   required: boolean;
   status: "PENDING" | "UPLOADED" | "APPROVED" | "REJECTED";
   fileUrl?: string | null;
+  uploadedBy?: "USER" | "EXPERT";
 };
 
-type UserDetails = {
+type ExpertFile = {
   id: string;
-  name: string;
-  email: string;
-  phone?: string | null;
+  title: string;
+  fileUrl: string;
+  uploadedAt: any;
 };
 
 type Service = {
@@ -30,10 +31,18 @@ type Service = {
   title: string;
   status: "active" | "completed";
   documentsRequired: DocumentItem[];
+  expertUploadedFiles?: ExpertFile[];
   documentStats: {
     pending: number;
   };
   userDetails?: UserDetails;
+};
+
+type UserDetails = {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -48,6 +57,9 @@ export default function ServicesTab() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   /* ===================== LOAD SERVICES ===================== */
 
@@ -96,24 +108,30 @@ export default function ServicesTab() {
     }
   };
 
-  /* ===================== UPLOAD DOCUMENT ===================== */
+  const uploadExpertDocument = async () => {
+    if (!file || !title || !selectedService) return;
 
-  const uploadDocument = async (docName: string, file: File) => {
     try {
-      setUploadingDoc(docName);
+      setUploading(true);
+
       const fakeUrl = URL.createObjectURL(file);
 
       await serverApi.post(
         `/api/services/${selectedService?.serviceId}/upload`,
         {
-          name: docName,
+          title: title,
           fileUrl: fakeUrl,
         },
       );
 
-      await openService(selectedService!.serviceId);
+      // reset form
+      setTitle("");
+      setFile(null);
+
+      // reload details
+      await openService(selectedService.serviceId);
     } finally {
-      setUploadingDoc(null);
+      setUploading(false);
     }
   };
 
@@ -136,7 +154,7 @@ export default function ServicesTab() {
 
   if (selectedService) {
     return (
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6 max-w-4xl mb-8">
         {/* BACK */}
         <button
           onClick={() => setSelectedService(null)}
@@ -182,50 +200,109 @@ export default function ServicesTab() {
           </div>
         )}
 
-        {/* DOCUMENTS */}
+        {/* ================= USER UPLOADED DOCUMENTS ================= */}
         <div className="bg-white border rounded-xl p-5 space-y-4">
-          <h3 className="font-medium text-lg">Documents</h3>
+          <h3 className="font-medium text-lg">User Documents</h3>
 
-          {detailsLoading ? (
-            <p className="text-sm text-gray-500">Loading documents…</p>
-          ) : (
+          {selectedService.documentsRequired.length ? (
             selectedService.documentsRequired.map((doc) => (
               <div
                 key={doc.key}
                 className="flex justify-between items-center border rounded-lg p-3"
               >
-                <div className="flex items-center gap-3">
-                  <FileText size={18} />
-                  <div>
-                    <p className="text-sm font-medium">{doc.label}</p>
-                    <p className="text-xs text-gray-500">{doc.status}</p>
-                  </div>
+                <div>
+                  <p className="font-medium text-sm">{doc.label}</p>
+                  <p className="text-xs text-gray-500">Status: {doc.status}</p>
                 </div>
 
-                {(doc.status === "PENDING" || doc.status === "REJECTED") && (
-                  <label className="cursor-pointer flex items-center gap-2 text-sm text-[#c92c41]">
-                    <Upload size={16} />
-                    {uploadingDoc === doc.key ? "Uploading…" : "Upload"}
-                    <input
-                      type="file"
-                      hidden
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          uploadDocument(doc.key, e.target.files[0]);
-                        }
-                      }}
-                    />
-                  </label>
-                )}
+                <div className="flex items-center gap-3">
+                  {doc.fileUrl && (
+                    <a
+                      href={doc.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#c92c41] underline"
+                    >
+                      View
+                    </a>
+                  )}
 
-                {doc.status === "APPROVED" && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                    Approved
-                  </span>
-                )}
+                  {doc.status === "APPROVED" && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                      Approved
+                    </span>
+                  )}
+
+                  {doc.status === "REJECTED" && (
+                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                      Rejected
+                    </span>
+                  )}
+                </div>
               </div>
             ))
+          ) : (
+            <p className="text-sm text-gray-500">No documents uploaded yet</p>
           )}
+        </div>
+
+        {/* ================= EXPERT UPLOADED FILES ================= */}
+        <div className="bg-white border rounded-xl p-5 space-y-4">
+          <h3 className="font-medium text-lg">Expert Documents</h3>
+
+          {selectedService.expertUploadedFiles?.length ? (
+            selectedService.expertUploadedFiles.map((file) => (
+              <div
+                key={file.id}
+                className="flex justify-between items-center border rounded-lg p-3"
+              >
+                <div>
+                  <p className="font-medium text-sm">{file.title}</p>
+                  <p className="text-xs text-gray-500">Uploaded by you</p>
+                </div>
+
+                <a
+                  href={file.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#c92c41] underline"
+                >
+                  View
+                </a>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">
+              No expert documents uploaded yet
+            </p>
+          )}
+        </div>
+
+        {/* ================= UPLOAD NEW EXPERT DOCUMENT ================= */}
+        <div className="bg-white border rounded-xl p-5 space-y-4">
+          <h3 className="font-medium text-lg">Upload New Document</h3>
+
+          <input
+            type="text"
+            placeholder="Document title (e.g. Final Agreement Draft)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm"
+          />
+
+          <input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="text-sm"
+          />
+
+          <button
+            disabled={!title || !file || uploading}
+            onClick={uploadExpertDocument}
+            className="bg-[#c92c41] text-white px-4 py-2 rounded-md text-sm disabled:opacity-50"
+          >
+            {uploading ? "Uploading…" : "Upload Document"}
+          </button>
         </div>
       </div>
     );
