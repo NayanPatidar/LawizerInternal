@@ -130,13 +130,17 @@ export default function ServicesTab() {
     try {
       setUploading(true);
 
-      const fakeUrl = URL.createObjectURL(file);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("title", title);
 
       await serverApi.post(
-        `/api/services/${selectedService?.serviceId}/upload`,
+        `/api/services/${selectedService.serviceId}/upload`,
+        formData,
         {
-          title: title,
-          fileUrl: fakeUrl,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
       );
 
@@ -146,6 +150,8 @@ export default function ServicesTab() {
 
       // reload details
       await openService(selectedService.serviceId);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to upload document");
     } finally {
       setUploading(false);
     }
