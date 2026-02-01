@@ -2,48 +2,37 @@ import { NextResponse } from "next/server";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL!;
 
-/* ============================================================
-   🔹 LAWIZER EXPERT – UPLOAD DOCUMENT
-============================================================ */
 export async function POST(
   req: Request,
-  { params }: { params: { serviceId: string } },
+  context: { params: { serviceId: string } },
 ) {
   try {
-    const authHeader = req.headers.get("authorization");
+    const { serviceId } = await context.params;
 
+    const authHeader = req.headers.get("authorization");
     if (!authHeader) {
-      return NextResponse.json(
-        { success: false, message: "Authorization missing" },
-        { status: 401 },
-      );
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
+    const formData = await req.formData();
 
     const backendRes = await fetch(
-      `${BASE}/lawizerExpert/services/${params.serviceId}/documents/upload`,
+      `${BASE}/lawizerExpert/services/${serviceId}/documents/upload`,
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: authHeader,
         },
-        body: JSON.stringify(body),
-        cache: "no-store",
+        body: formData,
       },
     );
 
-    const data = await backendRes.json();
-
+    const text = await backendRes.text();
+    return new NextResponse(text, { status: backendRes.status });
+  } catch (err) {
+    console.error("Expert upload proxy error:", err);
     return NextResponse.json(
-      { success: backendRes.ok, ...data },
-      { status: backendRes.status },
-    );
-  } catch (error) {
-    console.error("Expert upload document route error:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
+      { message: "Internal server error" },
       { status: 500 },
     );
   }
