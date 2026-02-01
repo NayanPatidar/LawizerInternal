@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { serverApi } from "@/lib/apis/axios";
 import { FileText, Clock, CheckCircle, ArrowLeft, Upload } from "lucide-react";
+import { toast } from "sonner";
 
 /* -------------------------------------------------------------------------- */
 /*                                   TYPES                                    */
@@ -60,6 +61,10 @@ export default function ServicesTab() {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [openRequestDoc, setOpenRequestDoc] = useState(false);
+  const [requestLabel, setRequestLabel] = useState("");
+  const [requestRequired, setRequestRequired] = useState(true);
+  const [requesting, setRequesting] = useState(false);
 
   /* ===================== LOAD SERVICES ===================== */
 
@@ -106,6 +111,17 @@ export default function ServicesTab() {
     } finally {
       setDetailsLoading(false);
     }
+  };
+
+  const requestDocumentFromUser = async (
+    serviceId: string,
+    label: string,
+    required = true,
+  ) => {
+    await serverApi.post(`/api/services/${serviceId}/documents/request`, {
+      label,
+      required,
+    });
   };
 
   const uploadExpertDocument = async () => {
@@ -202,7 +218,17 @@ export default function ServicesTab() {
 
         {/* ================= USER UPLOADED DOCUMENTS ================= */}
         <div className="bg-white border rounded-xl p-5 space-y-4">
-          <h3 className="font-medium text-lg">User Documents</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="font-medium text-lg">User Documents</h3>
+
+            <button
+              onClick={() => setOpenRequestDoc(true)}
+              className="flex items-center gap-2 text-sm text-[#c92c41] font-medium"
+            >
+              <Upload size={14} />
+              Request Document
+            </button>
+          </div>
 
           {selectedService.documentsRequired.length ? (
             selectedService.documentsRequired.map((doc) => (
@@ -304,6 +330,74 @@ export default function ServicesTab() {
             {uploading ? "Uploading…" : "Upload Document"}
           </button>
         </div>
+
+        {openRequestDoc && selectedService && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+              <h3 className="text-lg font-semibold">Request Document</h3>
+
+              <input
+                type="text"
+                placeholder="Document name (e.g. GST Certificate)"
+                value={requestLabel}
+                onChange={(e) => setRequestLabel(e.target.value)}
+                className="w-full border rounded-md px-3 py-2 text-sm"
+              />
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={requestRequired}
+                  onChange={(e) => setRequestRequired(e.target.checked)}
+                />
+                Required for service completion
+              </label>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setOpenRequestDoc(false)}
+                  className="text-sm text-gray-500"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  disabled={!requestLabel || requesting}
+                  onClick={async () => {
+                    try {
+                      setRequesting(true);
+
+                      await requestDocumentFromUser(
+                        selectedService.serviceId,
+                        requestLabel,
+                        requestRequired,
+                      );
+
+                      toast.success("Document requested from user");
+
+                      setRequestLabel("");
+                      setRequestRequired(true);
+                      setOpenRequestDoc(false);
+
+                      // Reload service details to reflect new doc
+                      await openService(selectedService.serviceId);
+                    } catch (err: any) {
+                      toast.error(
+                        err.response?.data?.message ||
+                          "Failed to request document",
+                      );
+                    } finally {
+                      setRequesting(false);
+                    }
+                  }}
+                  className="bg-[#c92c41] text-white px-4 py-2 rounded-md text-sm disabled:opacity-50"
+                >
+                  {requesting ? "Requesting…" : "Request"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
