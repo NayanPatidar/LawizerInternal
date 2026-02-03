@@ -4,9 +4,11 @@ const BASE = process.env.NEXT_PUBLIC_API_URL!;
 
 export async function GET(
   req: Request,
-  { params }: { params: { serviceId: string } },
+  context: { params: { serviceId: string } },
 ) {
   try {
+    const { serviceId } = await context.params;
+
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return NextResponse.json(
@@ -16,7 +18,7 @@ export async function GET(
     }
 
     const backendRes = await fetch(
-      `${BASE}/lawizerExpert/services/${params.serviceId}`,
+      `${BASE}/lawizerExpert/services/${serviceId}`,
       {
         headers: { Authorization: authHeader },
         cache: "no-store",
