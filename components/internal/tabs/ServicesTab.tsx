@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { serverApi } from "@/lib/apis/axios";
 import { FileText, Clock, CheckCircle, ArrowLeft, Upload } from "lucide-react";
 import { toast } from "sonner";
+import ServiceChat from "@/components/ServiceChat";
+import { useAuth } from "@/context/authContext";
 
 /* -------------------------------------------------------------------------- */
 /*                                   TYPES                                    */
@@ -57,7 +59,6 @@ export default function ServicesTab() {
 
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -65,6 +66,7 @@ export default function ServicesTab() {
   const [requestLabel, setRequestLabel] = useState("");
   const [requestRequired, setRequestRequired] = useState(true);
   const [requesting, setRequesting] = useState(false);
+  const { user } = useAuth();
 
   /* ===================== LOAD SERVICES ===================== */
 
@@ -403,6 +405,15 @@ export default function ServicesTab() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ================= CHAT ================= */}
+        {user?.uid && (
+          <ServiceChat
+            serviceId={selectedService.serviceId}
+            currentUserRole="LAWIZER_EXPERT"
+            currentUserId={user?.uid || ""}
+          />
         )}
       </div>
     );
