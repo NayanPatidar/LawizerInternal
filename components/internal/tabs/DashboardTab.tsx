@@ -48,22 +48,25 @@ export default function DashboardTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         <StatCard
           title="Assigned Services"
-          value={dashboard?.totalAssigned ?? 0}
+          value={dashboard?.assignedServices ?? 0}
           icon={ClipboardList}
         />
+
         <StatCard
           title="Active Services"
-          value={dashboard?.active ?? 0}
+          value={dashboard?.activeServices ?? 0}
           icon={Clock}
         />
+
         <StatCard
           title="Pending Documents"
           value={dashboard?.pendingDocuments ?? 0}
           icon={FileText}
         />
+
         <StatCard
           title="Completed Services"
-          value={dashboard?.completed ?? 0}
+          value={dashboard?.completedServices ?? 0}
           icon={CheckCircle}
         />
       </div>
